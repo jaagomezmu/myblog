@@ -1,0 +1,5 @@
+# ENV
+.venv
+# Some credentials
+.credentials
+
