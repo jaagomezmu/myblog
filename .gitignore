@@ -2,4 +2,5 @@
 .venv
 # Some credentials
 .credentials
-
+# Exclude PyCache
+_pycache__/
