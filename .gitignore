@@ -3,4 +3,4 @@
 # Some credentials
 .credentials
 # Exclude PyCache
-_pycache__/
+__pycache__/
