@@ -8,4 +8,4 @@ class BlogPost(models.Model):
     author = models.ForeignKey(User, on_delete = models.CASCADE, null = False)
 
     def __str__(self):
-        return title
+        return self.title
