@@ -1,10 +1,15 @@
+from blog.api.serializers import BlogPostSerializer
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .forms import NewUserForm
+from .models import BlogPost
 
 
 def index(request):
@@ -44,3 +49,11 @@ def logout_request(request):
 	logout(request)
 	messages.info(request, "You have successfully logged out.") 
 	return redirect("index")
+
+@api_view(['GET'])
+def blogpost_api_view(request):
+    
+    if request.method == 'GET':
+        posts = BlogPost.objects.all()
+        post_serializer = BlogPostSerializer(posts, many = True)
+        return Response(post_serializer.data)
