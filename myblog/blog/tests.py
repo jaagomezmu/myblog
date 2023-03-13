@@ -112,8 +112,7 @@ class TestApiBlogPost:
         assert response.status_code == 200
         
         # Check db
-        posts = BlogPost.objects.count()
-        assert posts == 0 ; # Must be 0
+        assert BlogPost.objects.count() == 0 ; # Must be 0
         
         # Create a post
         post = BlogPost.objects.create(title = 'test1',
