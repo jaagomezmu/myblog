@@ -4,9 +4,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import ListModelMixin
 
 from .forms import NewUserForm
 from .models import BlogPost
@@ -50,10 +49,12 @@ def logout_request(request):
 	messages.info(request, "You have successfully logged out.") 
 	return redirect("index")
 
-@api_view(['GET'])
-def blogpost_api_view(request):
+
+class PostsViewSet(ListModelMixin, GenericAPIView):
     
-    if request.method == 'GET':
-        posts = BlogPost.objects.all()
-        post_serializer = BlogPostSerializer(posts, many = True)
-        return Response(post_serializer.data)
+    queryset = BlogPost.objects.all()
+    serializer_class = BlogPostSerializer
+    
+    # Listing blog posts
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
