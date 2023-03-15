@@ -94,3 +94,34 @@ class TestUserStory:
         assert response.status_code == 200
         # Check Log out not in content
         assert 'Log out' not in response.content.decode()
+    
+@pytest.mark.usefixtures("user_1")
+class TestApiBlogPost:
+    """To test the api endpoint 
+    """
+    pytestmark = pytest.mark.django_db
+    
+    def test_blogpost_api(self, client, user_1):
+        
+        url = reverse('api/post')
+        
+        # Api GET
+        response = client.get(url,format = 'json')
+                
+        # Check response code
+        assert response.status_code == 200
+        
+        # Check db
+        assert BlogPost.objects.count() == 0 ; # Must be 0
+        
+        # Create a post
+        post = BlogPost.objects.create(title = 'test1',
+                                    body = 'This is the body of the first test',
+                                    author = user_1)
+        assert BlogPost.objects.count() == 1
+        
+        # Now. validate the api get again
+        response = client.get(url,format = 'json')
+        assert len(response.data) == BlogPost.objects.count()
+        
+        
