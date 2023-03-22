@@ -2,6 +2,7 @@ import pytest
 from blog.models import BlogPost
 from django.contrib.auth.models import User
 from django.urls import reverse
+from rest_framework.test import APIClient
 
 
 @pytest.fixture
@@ -101,9 +102,15 @@ class TestApiBlogPost:
     """
     pytestmark = pytest.mark.django_db
     
-    def test_blogpost_api(self, client, user_1):
+    def test_blogpost_api(self, user_1):
         
         url = reverse('api/post')
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        
+        client.force_authenticate(user=user_1)
         
         # Api GET
         response = client.get(url,format = 'json')
@@ -124,4 +131,22 @@ class TestApiBlogPost:
         response = client.get(url,format = 'json')
         assert len(response.data) == BlogPost.objects.count()
         
+    def test_post_blogpost_api(self, user_1):
         
+        url = reverse('api/post')
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        
+        client.force_authenticate(user=user_1)
+        
+        # Check db
+        assert BlogPost.objects.count() == 0 ; # Must be 0
+        
+        # Create a post without user
+        response = client.post(url,
+                               data={'body': 'Test_body',
+                                     'title':'Test_Title'})
+        # Check response code
+        assert response.status_code == 201
