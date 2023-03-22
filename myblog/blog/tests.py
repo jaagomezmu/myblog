@@ -150,3 +150,6 @@ class TestApiBlogPost:
                                      'title':'Test_Title'})
         # Check response code
         assert response.status_code == 201
+        
+        # Check db
+        assert BlogPost.objects.count() == 1 ; # Must be 1
