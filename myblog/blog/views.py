@@ -4,8 +4,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.permissions import IsAuthenticated
 
 from .forms import NewUserForm
 from .models import BlogPost
@@ -50,11 +52,22 @@ def logout_request(request):
 	return redirect("index")
 
 
-class PostsViewSet(ListModelMixin, GenericAPIView):
+class PostsViewSet(CreateModelMixin, ListModelMixin, GenericAPIView):
+    
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     
     queryset = BlogPost.objects.all()
     serializer_class = BlogPostSerializer
     
+    # Modify perform create
+    def perform_create(self, serializer):
+        serializer.save(author = self.request.user)
+    
     # Listing blog posts
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+    
+    # Post a new blogpost
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
