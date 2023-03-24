@@ -6,7 +6,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.generics import GenericAPIView
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
+                                   ListModelMixin, RetrieveModelMixin,
+                                   UpdateModelMixin)
 from rest_framework.permissions import IsAuthenticated
 
 from .forms import NewUserForm
@@ -71,3 +73,20 @@ class PostsViewSet(CreateModelMixin, ListModelMixin, GenericAPIView):
     # Post a new blogpost
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+class PostDetailViewSet(RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, GenericAPIView):
+
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    queryset = BlogPost.objects.all()
+    serializer_class = BlogPostSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
