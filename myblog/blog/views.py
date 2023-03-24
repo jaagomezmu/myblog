@@ -10,6 +10,7 @@ from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin, RetrieveModelMixin,
                                    UpdateModelMixin)
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 
 from .forms import NewUserForm
 from .models import BlogPost
@@ -53,40 +54,14 @@ def logout_request(request):
 	messages.info(request, "You have successfully logged out.") 
 	return redirect("index")
 
-
-class PostsViewSet(CreateModelMixin, ListModelMixin, GenericAPIView):
+class PostViewSet(ModelViewSet):
+    
+    queryset = BlogPost.objects.order_by('title').all()
+    serializer_class = BlogPostSerializer
     
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticated]
-    
-    queryset = BlogPost.objects.all()
-    serializer_class = BlogPostSerializer
-    
+        
     # Modify perform create
     def perform_create(self, serializer):
         serializer.save(author = self.request.user)
-    
-    # Listing blog posts
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-    
-    # Post a new blogpost
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-class PostDetailViewSet(RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, GenericAPIView):
-
-    authentication_classes = [BasicAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    queryset = BlogPost.objects.all()
-    serializer_class = BlogPostSerializer
-
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)

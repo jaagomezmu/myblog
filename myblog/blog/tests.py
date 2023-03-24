@@ -129,7 +129,7 @@ class TestApiBlogPost:
         
         # Now. validate the api get again
         response = client.get(url,format = 'json')
-        assert len(response.data) == BlogPost.objects.count()
+        assert response.data['count'] == BlogPost.objects.count()
         
     def test_post_blogpost_api(self, user_1):
         
