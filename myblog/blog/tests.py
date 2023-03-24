@@ -2,7 +2,7 @@ import pytest
 from blog.models import BlogPost
 from django.contrib.auth.models import User
 from django.urls import reverse
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 
 
 @pytest.fixture
@@ -153,3 +153,74 @@ class TestApiBlogPost:
         
         # Check db
         assert BlogPost.objects.count() == 1 ; # Must be 1
+    
+@pytest.mark.usefixtures("user_1")
+class TestDetailViewSet:
+    """To test the detail api endpoint
+    """    
+    pytestmark = pytest.mark.django_db
+    
+    def test_get(self, user_1):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        client.force_authenticate(user=user_1)
+        
+        # Create a post
+        post_test = BlogPost.objects.create(title='Test Post',
+                                            body='Test Content',
+                                            author=user_1)
+        # Set url
+        url = reverse('post_detail', args=[post_test.id])
+        
+        # Check response code
+        response = client.get(url, format = 'json')    
+        assert response.status_code == 200
+
+        # Check title 
+        assert response.data['title'] == 'Test Post'
+
+    def test_patch(self, user_1):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        client.force_authenticate(user=user_1)
+        
+        # Create a post
+        post_test = BlogPost.objects.create(title='Test Post',
+                                            body='Test Content',
+                                            author=user_1)
+        # Set url
+        url = reverse('post_detail', args=[post_test.id])
+               
+        data = {'title': 'Updated Title'}
+        
+        # Check response code
+        response = client.patch(url, data)  
+        assert response.status_code == 200
+
+        # Check title 
+        assert response.data['title'] == 'Updated Title'
+
+    def test_delete(self, user_1):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        client.force_authenticate(user=user_1)
+        
+        # Create a post
+        post_test = BlogPost.objects.create(title='Test Post',
+                                            body='Test Content',
+                                            author=user_1)
+        # Set url
+        url = reverse('post_detail', args=[post_test.id])
+        
+        # Check response code
+        response = client.delete(url)  
+        assert response.status_code == 204
+        
+        # Check db
+        assert BlogPost.objects.count() == 0 ; # Must be 0
