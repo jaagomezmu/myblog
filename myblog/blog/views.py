@@ -1,19 +1,15 @@
-from blog.api.serializers import BlogPostSerializer
+from blog.api.serializers import BlogPostSerializer, CommentSerializer, CommentCreateSerializer
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from rest_framework.authentication import BasicAuthentication
-from rest_framework.generics import GenericAPIView
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
-                                   ListModelMixin, RetrieveModelMixin,
-                                   UpdateModelMixin)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from .forms import NewUserForm
-from .models import BlogPost
+from .models import BlogPost, Comment
 
 
 def index(request):
@@ -62,6 +58,21 @@ class PostViewSet(ModelViewSet):
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticated]
         
-    # Modify perform create
     def perform_create(self, serializer):
         serializer.save(author = self.request.user)
+
+class CommentViewSet(ModelViewSet):
+    
+    queryset = Comment.objects.order_by('blogpost').all()
+    serializer_class = CommentSerializer
+    
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+        
+    def perform_create(self, serializer):
+        serializer.save(user = self.request.user)
+    
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        return CommentSerializer
