@@ -2,20 +2,12 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-def post_image_upload_path(instance, filename):
-    return 'uploads/images/{}/{}/{}/{}'.format(
-        timezone.now().year, 
-        timezone.now().month, 
-        timezone.now().day, 
-        filename
-    )
-
 class BlogPost(models.Model):
     title = models.CharField(blank = False, max_length = 100)
     body = models.CharField(blank = False, max_length = 250)
     author = models.ForeignKey(User, on_delete = models.CASCADE, null = False)
     created_at = models.DateTimeField(auto_now_add=True)
-    img = models.ImageField(upload_to=post_image_upload_path, blank=True, null=True)
+    img = models.ImageField(upload_to='uploads/%Y/%m/%d/', blank=True, null=True)
     safe = models.BooleanField(default=True)
     
     @property
