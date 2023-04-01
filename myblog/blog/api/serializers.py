@@ -7,13 +7,13 @@ class BlogPostSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BlogPost
-        fields = ('body', 'title', 'author')
+        fields = ('title', 'body', 'author', 'created_at', 'img', 'safe')
 
 class CommentSerializer(serializers.ModelSerializer):
     blogpost = serializers.SerializerMethodField()
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ('body', 'blogpost', 'user', 'created_at')
     
     def get_blogpost(self, obj):
         post = obj.blogpost
@@ -22,5 +22,5 @@ class CommentSerializer(serializers.ModelSerializer):
 class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ('body', 'blogpost', 'user', 'created_at')
         read_only_fields = ('user',)

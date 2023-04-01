@@ -369,3 +369,21 @@ class TestCommentViewSet:
         
         # Check db
         assert Comment.objects.count() == 0 ; # Must be 0
+
+@pytest.mark.usefixtures("user_1", "post_1", "user_2")
+class TestModelAndCommentModel:
+    """To test the comment and blogpost model
+    """    
+    pytestmark = pytest.mark.django_db
+    
+    def test_comments_count(self, user_1):
+        post_test = BlogPost.objects.create(title='Test Post',
+                                            body='Test Content',
+                                            author=user_1)
+        Comment.objects.create(body = 'Body of the first comment',
+                               blogpost = post_test,
+                               user = user_1)
+        Comment.objects.create(body = 'Body 2 of the first comment',
+                               blogpost = post_test,
+                               user = user_1)
+        assert post_test.comments_count == 2

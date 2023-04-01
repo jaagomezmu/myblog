@@ -4,3 +4,5 @@
 .credentials
 # Exclude PyCache
 __pycache__/
+# Exclude folders with data
+uploads/
