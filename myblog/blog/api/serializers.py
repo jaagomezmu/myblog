@@ -4,10 +4,13 @@ from rest_framework import serializers
 
 class BlogPostSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(many=False, read_only =True)
+    tagged_count = serializers.IntegerField(read_only=True)
+    last_tag_date = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = BlogPost
-        fields = ('title', 'body', 'author', 'created_at', 'img', 'safe')
+        fields = ('title', 'body', 'author', 'created_at', 'img', 'safe',
+                  'tagged_count', 'last_tag_date')
 
 class CommentSerializer(serializers.ModelSerializer):
     blogpost = serializers.SerializerMethodField()

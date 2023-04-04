@@ -1,11 +1,15 @@
-from blog.api.serializers import BlogPostSerializer, CommentSerializer, CommentCreateSerializer
+from blog.api.serializers import (BlogPostSerializer, CommentCreateSerializer,
+                                  CommentSerializer)
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from rest_framework.authentication import BasicAuthentication
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from .forms import NewUserForm
@@ -60,6 +64,18 @@ class PostViewSet(ModelViewSet):
         
     def perform_create(self, serializer):
         serializer.save(author = self.request.user)
+
+    @action(detail=True)
+    def tagged_count(self):
+        post = self.get_object()
+        count = post.tagged_count
+        return Response({'tagged_count': count})
+
+    @action(detail=True)
+    def last_tag_date(self):
+        post = self.get_object()
+        date = post.last_tag_date
+        return Response({'last_tag_date': date})
 
 class CommentViewSet(ModelViewSet):
     
