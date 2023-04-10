@@ -65,18 +65,6 @@ class PostViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author = self.request.user)
 
-    @action(detail=True)
-    def tagged_count(self):
-        post = self.get_object()
-        count = post.tagged_count
-        return Response({'tagged_count': count})
-
-    @action(detail=True)
-    def last_tag_date(self):
-        post = self.get_object()
-        date = post.last_tag_date
-        return Response({'last_tag_date': date})
-
 class CommentViewSet(ModelViewSet):
     
     queryset = Comment.objects.order_by('blogpost').all()
