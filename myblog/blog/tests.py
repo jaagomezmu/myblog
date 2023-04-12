@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta
+
 import pytest
-from blog.models import BlogPost, Comment
+from blog.models import BlogPost, Comment, UserTag
 from django.contrib.auth.models import User
+from django.db.utils import DataError
 from django.urls import reverse
 from rest_framework.test import APIClient
-from django.db.utils import DataError
 
 
 @pytest.fixture
@@ -21,6 +23,26 @@ def post_1(db, user_1):
     post = BlogPost.objects.create(title = 'test1',
                                    body = 'This is the body of the first test',
                                    author = user_1)
+    return post
+
+@pytest.fixture
+def tagged_post(user_1, user_2):
+    post = BlogPost.objects.create(title = 'Tagged Post', 
+                                   body = 'Test body', 
+                                   author = user_1)
+    UserTag.objects.create(blogpost = post, user = user_1)
+    UserTag.objects.create(blogpost = post, user = user_2)
+    return post
+
+@pytest.fixture
+def old_tagged_post(user_1, user_2):
+    post = BlogPost.objects.create(title = 'Old Tagged Post',
+                                   body = 'Test body',
+                                   author = user_1)
+    UserTag.objects.create(blogpost = post, user = user_1, 
+                           created_at = datetime.now()-timedelta(days = 15))
+    UserTag.objects.create(blogpost = post, user = user_2, 
+                           created_at = datetime.now()-timedelta(days = 3))
     return post
 
 @pytest.mark.usefixtures("user_1")
@@ -387,3 +409,19 @@ class TestModelAndCommentModel:
                                blogpost = post_test,
                                user = user_1)
         assert post_test.comments_count == 2
+
+@pytest.mark.usefixtures("user_1", "post_1", "tagged_post")
+class TestPropertiesBlogPost:
+    """To test the blogpost properties
+    """    
+    pytestmark = pytest.mark.django_db
+    
+    def test_tagged_count(self, post_1, tagged_post):
+
+        assert post_1.tagged_count == 0
+        assert tagged_post.tagged_count == 2
+    
+    def test_last_tag_date(self, post_1, tagged_post, old_tagged_post):
+        assert post_1.last_tag_date is None
+        assert tagged_post.last_tag_date == max(tag.created_at for tag in tagged_post.usertags.all())
+        assert old_tagged_post.last_tag_date == max(tag.created_at for tag in old_tagged_post.usertags.all())

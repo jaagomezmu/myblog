@@ -7,7 +7,8 @@ class BlogPostSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BlogPost
-        fields = ('title', 'body', 'author', 'created_at', 'img', 'safe')
+        fields = ('title', 'body', 'author', 'created_at', 'img', 'safe',
+                  'tagged_count', 'last_tag_date')
 
 class CommentSerializer(serializers.ModelSerializer):
     blogpost = serializers.SerializerMethodField()
