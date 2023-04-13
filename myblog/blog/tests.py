@@ -117,7 +117,7 @@ class TestApiBlogPost:
     
     def test_blogpost_api(self, user_1):
         
-        url = reverse('api/post')
+        url = reverse('post-list')
         
         # Login
         client = APIClient()
@@ -146,7 +146,7 @@ class TestApiBlogPost:
         
     def test_post_blogpost_api(self, user_1):
         
-        url = reverse('api/post')
+        url = reverse('post-list')
         
         # Login
         client = APIClient()
@@ -185,7 +185,7 @@ class TestDetailViewSet:
                                             body='Test Content',
                                             author=user_1)
         # Set url
-        url = reverse('post_detail', args=[post_test.id])
+        url = reverse('post-detail', args=[post_test.id])
         
         # Check response code
         response = client.get(url, format = 'json')    
@@ -206,7 +206,7 @@ class TestDetailViewSet:
                                             body='Test Content',
                                             author=user_1)
         # Set url
-        url = reverse('post_detail', args=[post_test.id])
+        url = reverse('post-detail', args=[post_test.id])
                
         data = {'title': 'Updated Title'}
         
@@ -229,7 +229,7 @@ class TestDetailViewSet:
                                             body='Test Content',
                                             author=user_1)
         # Set url
-        url = reverse('post_detail', args=[post_test.id])
+        url = reverse('post-detail', args=[post_test.id])
         
         # Check response code
         response = client.delete(url)  

@@ -1,10 +1,12 @@
-from blog.api.serializers import BlogPostSerializer, CommentSerializer, CommentCreateSerializer
+from blog.api.serializers import (BlogPostSerializer, BlogPostTitleSerializer,
+                                  CommentCreateSerializer, CommentSerializer)
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from rest_framework.authentication import BasicAuthentication
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
@@ -57,9 +59,23 @@ class PostViewSet(ModelViewSet):
     
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticated]
-        
+         
     def perform_create(self, serializer):
         serializer.save(author = self.request.user)
+        
+    def get_queryset(self):
+        return BlogPost.objects.filter(author = self.request.user).order_by('title').all()
+           
+    def get_serializer_class(self):
+        if self.action == 'my_tags':
+            return BlogPostTitleSerializer
+        return self.serializer_class
+    
+    @action(detail=False, methods=['get'])
+    def my_tags(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+    
+
 
 class CommentViewSet(ModelViewSet):
     

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap4',
     'rest_framework',
     'django_filters',
+    'taggit',
     'blog'
 ]
 
