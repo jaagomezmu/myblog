@@ -1,12 +1,13 @@
+import django_filters.rest_framework as filters
 from blog.api.serializers import (BlogPostSerializer, BlogPostTitleSerializer,
                                   CommentCreateSerializer, CommentSerializer)
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-import django_filters.rest_framework as filters
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -14,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from .forms import NewUserForm
-from .models import BlogPost, Comment
+from .models import BlogPost, Comment, Like
 
 
 def index(request):
@@ -91,6 +92,27 @@ class PostViewSet(ModelViewSet):
     @action(detail=False, methods=['get'], url_path="my-tags")
     def my_tags(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+    
+    @action(detail=True, methods=['post'], url_path='like')
+    def like(self, request, pk=None):
+        post = self.get_object()
+        try:
+            like = Like.objects.get(user=request.user, content_type=ContentType.objects.get_for_model(post), object_id=post.id)
+            like.delete()
+            return Response({'status': 'unliked'})
+        except Like.DoesNotExist:
+            Like.objects.create(user=request.user, content_object=post)
+            return Response({'status': 'liked'})
+    
+    @action(detail=True, methods=['post'], url_path='unlike')
+    def unlike(self, request, pk=None):
+        post = self.get_object()
+        try:
+            like = Like.objects.get(user=request.user, content_type=ContentType.objects.get_for_model(post), object_id=post.id)
+            like.delete()
+            return Response({'status': 'unliked'})
+        except Like.DoesNotExist:
+            return Response({'status': 'not liked'})
 
 class CommentViewSet(ModelViewSet):
     
