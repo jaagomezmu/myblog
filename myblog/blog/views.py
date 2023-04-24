@@ -6,6 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
+import django_filters.rest_framework as filters
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -54,6 +55,14 @@ def logout_request(request):
     messages.info(request, "You have successfully logged out.") 
     return redirect("index")
 
+class BlogPostFilter(filters.FilterSet):
+    user = filters.CharFilter(field_name='author__username')
+    safe = filters.BooleanFilter(field_name='safe')
+
+    class Meta:
+        model = BlogPost
+        fields = ['user', 'safe']
+
 class PostViewSet(ModelViewSet):
     
     queryset = BlogPost.objects.order_by('title').all()
@@ -61,6 +70,10 @@ class PostViewSet(ModelViewSet):
     
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticated]
+    
+    filterset_class = BlogPostFilter
+    search_fields = ['title', 'body', 'author__username']
+    ordering_fields = ['title', 'author__username']
         
     def perform_create(self, serializer):
         serializer.save(author = self.request.user)
