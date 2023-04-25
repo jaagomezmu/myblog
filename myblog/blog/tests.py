@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 
 import pytest
@@ -425,3 +426,84 @@ class TestPropertiesBlogPost:
         assert post_1.last_tag_date is None
         assert tagged_post.last_tag_date == max(tag.created_at for tag in tagged_post.usertags.all())
         assert old_tagged_post.last_tag_date == max(tag.created_at for tag in old_tagged_post.usertags.all())
+
+@pytest.fixture
+def user_18(db):
+    user = User.objects.create_user("testuser", password='testpassword')
+    return user
+
+@pytest.fixture
+def post_a(db, user_18):
+    post = BlogPost.objects.create(title = 'Test Post 1',
+                                   body = 'This is a test post.',
+                                   author = user_18)
+    return post
+
+@pytest.fixture
+def post_b(db, user_18):
+    post = BlogPost.objects.create(title = 'Another Post',
+                                   body = 'This is another test post.',
+                                   author = user_18)
+    return post
+
+@pytest.fixture
+def post_c(db, user_18):
+    post = BlogPost.objects.create(title = 'Test Post 3',
+                                   body = 'This is a third test post.',
+                                   author = user_18)
+    return post
+
+@pytest.mark.usefixtures("user_18", "post_a", "post_b","post_c", "user_1")
+class TestFiltersBlogPost:
+    """To test the blogpost view filters
+    """    
+    pytestmark = pytest.mark.django_db
+           
+    def test_search_fields(self, user_1 ,user_18):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_18.username, password=user_18.password)
+        client.force_authenticate(user=user_18)
+
+        url = reverse('post-list')
+        response = client.get(url, {'safe': 'false'})
+
+        assert response.status_code == 200
+        assert len(response.json()['results']) == 0
+        
+        response2 = client.get(url, {'user': user_1.username})
+        assert len(response2.json()['results']) == 0
+        
+        response3 = client.get(url, {'user': user_18.username})
+        assert len(response3.json()['results']) == 3
+    
+    def test_ordering_fields(self, user_18):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_18.username, password=user_18.password)
+        client.force_authenticate(user=user_18)
+
+        url = reverse('post-list')
+        response = client.get(url, {'ordering': 'title'})
+
+        assert response.status_code == 200
+        assert response.json()['results'][0]['title'] == 'Another Post'
+        assert response.json()['results'][1]['title'] == 'Test Post 1'
+        assert response.json()['results'][2]['title'] == 'Test Post 3'
+    
+    def test_filter_fields(self, user_1):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        client.force_authenticate(user=user_1)
+
+        url = reverse('post-list')
+        response = client.get(url, {'safe': False })
+
+        assert response.status_code == 200
+        
+        response2 = client.get(url, {'user': user_1.username})
+        assert len(response2.json()['results']) == 0
