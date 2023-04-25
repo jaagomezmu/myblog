@@ -118,7 +118,7 @@ class PostViewSet(LikeModelMixin, ModelViewSet):
     def unlike(self, request, *args, **kwargs):
         return self.unlike(request, *args, **kwargs)
 
-class CommentViewSet(ModelViewSet):
+class CommentViewSet(LikeModelMixin, ModelViewSet):
     
     queryset = Comment.objects.order_by('blogpost').all()
     serializer_class = CommentSerializer
@@ -133,3 +133,11 @@ class CommentViewSet(ModelViewSet):
         if self.request.method == 'POST':
             return CommentCreateSerializer
         return CommentSerializer
+    
+    @action(detail=True, methods=['post'])
+    def like(self, request, *args, **kwargs):
+        return self.like(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'])
+    def unlike(self, request, *args, **kwargs):
+        return self.unlike(request, *args, **kwargs)
