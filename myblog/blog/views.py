@@ -64,7 +64,24 @@ class BlogPostFilter(filters.FilterSet):
         model = BlogPost
         fields = ['user', 'safe']
 
-class PostViewSet(ModelViewSet):
+class LikeModelMixin:
+    def like(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if Like.objects.filter(user=request.user, content_type=ContentType.objects.get_for_model(obj), object_id=obj.id).exists():
+            return Response({'status': 'already_liked'})
+        like = Like(user=request.user, content_object=obj)
+        like.save()
+        return Response({'status': 'liked'})
+
+    def unlike(self, request, *args, **kwargs):
+        obj = self.get_object()
+        like = Like.objects.filter(user=request.user, content_type=ContentType.objects.get_for_model(obj), object_id=obj.id)
+        if not like.exists():
+            return Response({'status': 'not_liked'})
+        like.delete()
+        return Response({'status': 'unliked'})
+
+class PostViewSet(LikeModelMixin, ModelViewSet):
     
     queryset = BlogPost.objects.order_by('title').all()
     serializer_class = BlogPostSerializer
@@ -93,28 +110,15 @@ class PostViewSet(ModelViewSet):
     def my_tags(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
     
-    @action(detail=True, methods=['post'], url_path='like')
-    def like(self, request, pk=None):
-        post = self.get_object()
-        try:
-            like = Like.objects.get(user=request.user, content_type=ContentType.objects.get_for_model(post), object_id=post.id)
-            like.delete()
-            return Response({'status': 'unliked'})
-        except Like.DoesNotExist:
-            Like.objects.create(user=request.user, content_object=post)
-            return Response({'status': 'liked'})
-    
-    @action(detail=True, methods=['post'], url_path='unlike')
-    def unlike(self, request, pk=None):
-        post = self.get_object()
-        try:
-            like = Like.objects.get(user=request.user, content_type=ContentType.objects.get_for_model(post), object_id=post.id)
-            like.delete()
-            return Response({'status': 'unliked'})
-        except Like.DoesNotExist:
-            return Response({'status': 'not liked'})
+    @action(detail=True, methods=['post'])
+    def like(self, request, *args, **kwargs):
+        return self.like(request, *args, **kwargs)
 
-class CommentViewSet(ModelViewSet):
+    @action(detail=True, methods=['post'])
+    def unlike(self, request, *args, **kwargs):
+        return self.unlike(request, *args, **kwargs)
+
+class CommentViewSet(LikeModelMixin, ModelViewSet):
     
     queryset = Comment.objects.order_by('blogpost').all()
     serializer_class = CommentSerializer
@@ -129,3 +133,11 @@ class CommentViewSet(ModelViewSet):
         if self.request.method == 'POST':
             return CommentCreateSerializer
         return CommentSerializer
+    
+    @action(detail=True, methods=['post'])
+    def like(self, request, *args, **kwargs):
+        return self.like(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'])
+    def unlike(self, request, *args, **kwargs):
+        return self.unlike(request, *args, **kwargs)
