@@ -6,3 +6,5 @@
 __pycache__/
 # Exclude folders with data
 uploads/
+# VSCODE
+../.vscode/
