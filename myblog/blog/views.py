@@ -16,6 +16,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from .forms import NewUserForm
 from .models import BlogPost, Comment, Like
+from .filters import BlogPostFilter, CommentFilter
 
 
 def index(request):
@@ -55,14 +56,6 @@ def logout_request(request):
     logout(request)
     messages.info(request, "You have successfully logged out.") 
     return redirect("index")
-
-class BlogPostFilter(filters.FilterSet):
-    user = filters.CharFilter(field_name='author__username')
-    safe = filters.BooleanFilter(field_name='safe')
-
-    class Meta:
-        model = BlogPost
-        fields = ['user', 'safe']
 
 class LikeModelMixin:
     def like(self, request, *args, **kwargs):
@@ -122,6 +115,7 @@ class CommentViewSet(LikeModelMixin, ModelViewSet):
     
     queryset = Comment.objects.order_by('blogpost').all()
     serializer_class = CommentSerializer
+    filterset_class = CommentFilter
     
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticated]

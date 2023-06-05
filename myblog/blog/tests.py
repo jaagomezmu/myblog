@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timedelta
 
 import pytest
@@ -6,6 +5,7 @@ from blog.models import BlogPost, Comment, UserTag
 from django.contrib.auth.models import User
 from django.db.utils import DataError
 from django.urls import reverse
+from freezegun import freeze_time
 from rest_framework.test import APIClient
 
 
@@ -28,23 +28,67 @@ def post_1(db, user_1):
 
 @pytest.fixture
 def tagged_post(user_1, user_2):
-    post = BlogPost.objects.create(title = 'Tagged Post', 
-                                   body = 'Test body', 
-                                   author = user_1)
-    UserTag.objects.create(blogpost = post, user = user_1)
-    UserTag.objects.create(blogpost = post, user = user_2)
+    with freeze_time('2022-01-01'):
+        post = BlogPost.objects.create(
+            title='Tagged Post',
+            body='Test body',
+            author=user_1
+        )
+        UserTag.objects.create(blogpost=post, user=user_1)
+        UserTag.objects.create(blogpost=post, user=user_2)
     return post
 
 @pytest.fixture
 def old_tagged_post(user_1, user_2):
-    post = BlogPost.objects.create(title = 'Old Tagged Post',
-                                   body = 'Test body',
-                                   author = user_1)
-    UserTag.objects.create(blogpost = post, user = user_1, 
-                           created_at = datetime.now()-timedelta(days = 15))
-    UserTag.objects.create(blogpost = post, user = user_2, 
-                           created_at = datetime.now()-timedelta(days = 3))
+    with freeze_time('2022-03-01'):
+        post = BlogPost.objects.create(
+            title='Old Tagged Post',
+            body='Test body',
+            author=user_1
+        )
+        UserTag.objects.create(
+            blogpost=post,
+            user=user_1,
+            created_at=datetime.now()-timedelta(days=15)
+        )
+        UserTag.objects.create(
+            blogpost=post,
+            user=user_2,
+            created_at=datetime.now()-timedelta(days=3)
+        )
     return post
+
+@pytest.fixture
+def comment_1(post_1, user_1):
+    with freeze_time('2022-01-01'):
+        comment = Comment.objects.create(
+            body='Test comment 1',
+            blogpost=post_1,
+            user=user_1
+        )
+    return comment
+
+@pytest.fixture
+def comment_2(post_1, user_1):
+    with freeze_time('2022-01-03'):
+        comment = Comment.objects.create(
+            body='Test comment 2',
+            blogpost=post_1,
+            user=user_1
+        )
+    return comment
+
+@pytest.fixture
+def old_comment(post_1, user_1):
+    with freeze_time('2022-01-05'):
+        comment = Comment.objects.create(
+            body='Old comment',
+            blogpost=post_1,
+            user=user_1,
+            created_at=datetime.now() - timedelta(days=10)
+        )
+    return comment
+
 
 @pytest.mark.usefixtures("user_1")
 class TestPostModel:
@@ -507,3 +551,87 @@ class TestFiltersBlogPost:
         
         response2 = client.get(url, {'user': user_1.username})
         assert len(response2.json()['results']) == 0
+
+###############################################################
+##################### CUSTOM FILTERS ##########################
+###############################################################
+
+@pytest.mark.usefixtures("user_18", "post_1", "tagged_post","old_tagged_post")
+class TestPostEndpoint:
+    """To test the BlogPost date filters
+    """
+    pytestmark = pytest.mark.django_db
+
+    def test_created_at_after_filter(self, user_18):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_18.username, password=user_18.password)
+        client.force_authenticate(user=user_18)
+
+        url = reverse('post-list')
+        response = client.get(url, {'created_at_after': '2022-02-02'})
+
+        # Check response code
+        assert response.status_code == 200
+
+        # Check db
+        assert len(BlogPost.objects.all()) == 3
+
+        # Check filter
+        assert len(response.data['results']) == 2
+    
+    def test_created_at_before_filter(self, user_18):
+        
+        # Login
+        client = APIClient()
+        client.login(username=user_18.username, password=user_18.password)
+        client.force_authenticate(user=user_18)
+
+        url = reverse('post-list')
+        response = client.get(url, {'created_at_before': '2022-02-02'})
+
+        # Check response code
+        assert response.status_code == 200
+
+        # Check db
+        assert len(BlogPost.objects.all()) == 3     
+
+        # Check filter
+        assert len(response.data['results']) == 1
+
+@pytest.mark.usefixtures("post_1", "comment_1", "comment_2", "old_comment")
+class TestCommentEndpoint:
+    """To test the Comment date filters
+    """
+    pytestmark = pytest.mark.django_db
+
+    def test_created_at_after_filter(self, user_1):
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        client.force_authenticate(user=user_1)
+
+        url = reverse('comment-list')
+        response = client.get(url, {'created_at_after': '2022-01-02'})
+
+        # Check response code
+        assert response.status_code == 200
+
+        # Check filter
+        assert len(response.data['results']) == 2
+
+    def test_created_at_before_filter(self, user_1):
+        # Login
+        client = APIClient()
+        client.login(username=user_1.username, password=user_1.password)
+        client.force_authenticate(user=user_1)
+
+        url = reverse('comment-list')
+        response = client.get(url, {'created_at_before': '2022-01-02'})
+
+        # Check response code
+        assert response.status_code == 200
+
+        # Check filter
+        assert len(response.data['results']) == 1
