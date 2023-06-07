@@ -1,15 +1,12 @@
-import unittest.mock as mock
+from unittest.mock import patch, Mock
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-from blog.api.serializers import BlogPostSerializer
 from blog.middleware import RedisVisitMiddleware
 from blog.models import BlogPost, Comment, UserTag
 from django.contrib.auth.models import User
 from django.db.utils import DataError
-from django.http import HttpResponse
-from django.test import RequestFactory
 from django.urls import reverse
 from freezegun import freeze_time
 from rest_framework.test import APIClient
@@ -646,24 +643,21 @@ class TestCommentEndpoint:
 #### Mocking Redis ####
 #######################
 
-@pytest.fixture
-def mock_redis():
-    with patch('blog.middleware.RedisVisitMiddleware') as mock_redis_class:
-        yield mock_redis_class.return_value
+class TestMiddleware:
+    @pytest.fixture
+    def mock_redis(self):
+        with patch('blog.middleware.RedisVisitMiddleware') as mock:
+            yield mock.return_value
 
-@pytest.mark.usefixtures("mock_redis", "user_1")
-class TestMiddlewareAndSerializer:
-    """To Mocking Redis
-    """
-    def test_blog_post_serializer(self, mock_redis, user_1):
-        serializer = BlogPostSerializer()
+    @pytest.mark.django_db
+    def test_redis_middleware(self, mock_redis):
+        middleware = RedisVisitMiddleware(get_response=lambda r: None)
+        request = Mock(method='GET', resolver_match=Mock(kwargs={'pk': 123}))
+        response = middleware(request)
 
-        with patch('blog.api.serializers.redis_connection', mock_redis):
-            visits = b'10'
-            mock_redis.get.return_value = visits
+        assert response is None
 
-            blog_post = BlogPost(title='Test Post', body='Lorem ipsum', author=user_1)
-            result = serializer.get_visits_count(blog_post)
+        key = 'post:123:visits'
 
-            assert result == mock.ANY
-            assert result == int(visits)
+        assert mock_redis.incr.call_count == 0
+        mock_redis.incr.assert_called_once_with(key)
