@@ -1,8 +1,9 @@
+import unittest.mock as mock
 from unittest.mock import patch, Mock
 from datetime import datetime, timedelta
-from unittest.mock import patch
 
 import pytest
+from blog.api.serializers import BlogPostSerializer
 from blog.middleware import RedisVisitMiddleware
 from blog.models import BlogPost, Comment, UserTag
 from django.contrib.auth.models import User
@@ -643,6 +644,7 @@ class TestCommentEndpoint:
 #### Mocking Redis ####
 #######################
 
+@pytest.mark.usefixtures("user_1")
 class TestMiddleware:
     @pytest.fixture
     def mock_redis(self):
@@ -661,3 +663,18 @@ class TestMiddleware:
 
         assert mock_redis.incr.call_count == 0
         # mock_redis.incr.assert_called_once_with(key)
+        
+    def test_blogpost_serializer(self, mock_redis, user_1):
+        
+        serializer = BlogPostSerializer()
+        
+        with patch('blog.api.serializers.redis_connection', mock_redis):
+            visists = b'10'
+            mock_redis.get.return_value = visits
+            
+            blogPost = BlogPost(title = 'Test Post',
+                                body = 'Test body',
+                                author = user_1)
+            result = serializer.get_visits_count(blogPost)
+            
+            assert result == mock.ANY
