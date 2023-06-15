@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,11 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-oh@9%!jpkm!ks&-s&cj4fa2%l^0qy*3(o482%mgonv=v%_&zm('
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", True)
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["localhost", "0.0.0.0"]
 
 # Application definition
 
@@ -84,15 +83,18 @@ WSGI_APPLICATION = 'myblog.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'myblog',
-	'USER': 'myblog',
-	'PASSWORD': 'myblog',
-	'HOST': 'localhost',
-	'PORT': '5433',
+
+    'default' : {
+    "ENGINE": "django.db.backends.postgresql",
+    "HOST": os.environ.get("POSTGRES_HOST"),
+    "NAME": os.environ.get("POSTGRES_NAME"),
+    "USER": os.environ.get("POSTGRES_USER"),
+    "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+    "PORT": int(os.environ.get("POSTGRES_PORT")),
     }
+
 }
+
 
 
 # Password validation
