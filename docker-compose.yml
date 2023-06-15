@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  myblog:
+    container_name: web_app
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+    entrypoint: /app/server-entrypoint.sh
+    environment:
+      DEBUG: "True"
+      POSTGRES_HOST: db
+      POSTGRES_NAME: myblog
+      POSTGRES_USER: myblog
+      POSTGRES_PASSWORD: myblog
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+  redis:
+    restart: always
+    image: redis:latest
+    expose:
+      - "6379"
+
+  db:    
+    restart: always
+    image: postgres
+    expose:
+      - 5432
+    environment:
+      POSTGRES_DB: myblog
+      POSTGRES_USER: myblog
+      POSTGRES_PASSWORD: myblog

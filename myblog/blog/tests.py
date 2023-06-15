@@ -669,7 +669,7 @@ class TestMiddleware:
         serializer = BlogPostSerializer()
         
         with patch('blog.api.serializers.redis_connection', mock_redis):
-            visists = b'10'
+            visits = b'10'
             mock_redis.get.return_value = visits
             
             blogPost = BlogPost(title = 'Test Post',
